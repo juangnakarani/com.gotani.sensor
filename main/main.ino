@@ -19,10 +19,19 @@ RTC_DS1307 rtc;
 
 char daysOfTheWeek[7][12] = {"mgu", "sen", "sel", "rab", "kam", "jum", "sab"};
 
+//define button
+const int buttonPin = 3;
+const int ledPin =  13;
+int buttonState = 0;
+int backlightDelayed = 100;
+bool backlightButton = false;
 void setup()
 {
 
-
+  // initialize the LED pin as an output:
+  pinMode(ledPin, OUTPUT);
+  // initialize the pushbutton pin as an input:
+  pinMode(buttonPin, INPUT);
 
 #ifndef ESP8266
   while (!Serial); // for Leonardo/Micro/Zero
@@ -46,12 +55,27 @@ void setup()
   }
 
   lcd.init();                      // initialize the lcd
-  lcd.backlight();
+  //  lcd.backlight();
 }
 
 
 void loop()
 {
+  buttonState = digitalRead(buttonPin);
+  // check if the pushbutton is pressed. If it is, the buttonState is HIGH:
+  if (buttonState == HIGH) {
+    backlightButton = true;
+    lcd.backlight();
+  }
+
+  if (backlightButton == true) {
+    backlightDelayed--;
+    if (backlightDelayed == 0) {
+      lcd.noBacklight();
+      backlightButton = false;
+      backlightDelayed = 100;
+    }
+  }
   float h = dht.readHumidity();
   // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
@@ -69,26 +93,13 @@ void loop()
 
   DateTime now = rtc.now();
 
-  char buffer[9] = "";
+  char buffer[20] = "";
 
-  sprintf(buffer, "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
-
+  //  sprintf(buffer, "%s,%s/%s/%s %02d:%02d:%02d", daysOfTheWeek[now.dayOfTheWeek()], now.day(),now.month(),now.year(), now.hour(), now.minute(), now.second());
+  sprintf(buffer, "%s,%02d/%02d/%02d %02d:%02d", daysOfTheWeek[now.dayOfTheWeek()], now.day(), now.month(), now.year(), now.hour(), now.minute());
   //  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(buffer);
-  //  lcd.print(daysOfTheWeek[now.dayOfTheWeek()]);
-  //  lcd.setCursor(3, 0);
-  //  lcd.print(",");
-  //  lcd.setCursor(4, 0);
-  //  lcd.print(now.hour(), DEC);
-  //  lcd.setCursor(6, 0);
-  //  lcd.print(":");
-  //  lcd.setCursor(7, 0);
-  //  lcd.print(now.minute(), DEC);
-  //  lcd.setCursor(9, 0);
-  //  lcd.print(":");
-  //  lcd.setCursor(10, 0);
-  //  lcd.print(now.second(), DEC);
 
   lcd.setCursor(0, 1);
   lcd.print("lembab:");
@@ -100,6 +111,6 @@ void loop()
   lcd.print(t);
 
   lcd.setCursor(0, 3);
-  lcd.print("lokasi:kamar kosan");
-//  delay(1000);
+  lcd.print("status:normal");
+  //  delay(1000);
 }
